@@ -1,0 +1,1 @@
+//stays running  to handle gestures even when the popup is closed

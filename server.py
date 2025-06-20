@@ -1,0 +1,1 @@
+#Handles HTTP requests from the extension

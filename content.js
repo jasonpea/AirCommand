@@ -1,0 +1,1 @@
+//injects scripts into web pages to control browser behavior 
