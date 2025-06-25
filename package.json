@@ -1,5 +1,14 @@
-https://www.opc-router.com/what-is-a-json-file/
-
-^^view this for info abt json files
-
-used for permissino for chrome extension, kinda liek instructions for extension
+{
+    "name": "gesture-control-app",
+    "version": "1.0.0",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron ."
+    },
+    "dependencies": {
+        "@mediapipe/hands": "^0.4.0"
+    },
+    "devDependencies": {
+        "electron": "^37.0.0"
+    }
+}
