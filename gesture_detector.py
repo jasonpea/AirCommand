@@ -21,7 +21,12 @@ def is_peace(hand_landmarks):
     # Make sure other fingers are down
     ring = hand_landmarks.landmark[16].y > hand_landmarks.landmark[14].y #check if ring finger tip is lower thn dip
     pinky = hand_landmarks.landmark[20].y > hand_landmarks.landmark[18].y #check if pinky tip lower than dip
-    thumb = hand_landmarks.landmark[4].y > hand_landmarks.landmark[2].y #check for thumb
+    for hand_landmarks, hand_handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
+        label = hand_handedness.classification[0].label  # 'Left' or 'Right'
+        if label == "Right":
+            thumb = hand_landmarks.landmark[4].x > hand_landmarks.landmark[2].x
+        else: #for left hand
+            thumb = hand_landmarks.landmark[4].x < hand_landmarks.landmark[2].x
 
     return extended == 2 and ring and pinky and thumb #return true if both middle + index extended and if ring and pinky return true
 
