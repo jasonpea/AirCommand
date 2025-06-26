@@ -48,6 +48,8 @@ def is_thumbsup(hand_landmarks):
 # Set up webcam and hand tracking
 #cap is an object apart of the cv2videocapture class 
 cap = cv2.VideoCapture(0) #0= default , 1= continuity 
+if not cap.isOpened():
+    print("Error: Could not open webcam.")
 
 #with is used with file handling, will close right after execution
 with mp_hands.Hands( #mp.solutions.hands.Hands points at a folder of tools but mp_hands.Hands(...) is a constructor call that calls the class in the module (mp_hands) to create an object
