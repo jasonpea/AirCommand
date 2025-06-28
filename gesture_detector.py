@@ -2,6 +2,8 @@ import cv2
 import mediapipe as mp
 import subprocess #for opening applications
 from landmark_points import *
+import time
+import numpy as np
 
 #initializing
 mp_hands = mp.solutions.hands # shortcut to access MediaPipe’s hand tracking module so no need to continuously write mpsolutionshands
@@ -44,11 +46,17 @@ def is_thumbsup(landmarks):
         return True
     return False
 
+
 # Set up webcam and hand tracking
 #cap is an object apart of the cv2videocapture class 
 cap = cv2.VideoCapture(1) #0= default , 1= continuity 
 if not cap.isOpened():
     print("Error: Could not open webcam.")
+
+#setting up cooldown timer
+cooldown_time = 3  
+last_triggered_time = 0  #initialize last triggered time
+
 
 #with is used with file handling, will close right after execution
 with mp_hands.Hands( #mp.solutions.hands.Hands points at a folder of tools but mp_hands.Hands(...) is a constructor call that calls the class in the module (mp_hands) to create an object
@@ -71,13 +79,20 @@ with mp_hands.Hands( #mp.solutions.hands.Hands points at a folder of tools but m
         if results.multi_hand_landmarks: # if any hands were detected in the frame (if retunrs none, code wont run obvi)
             for hand_landmarks in results.multi_hand_landmarks: #Loops thru each hand that MediaPipe detected
                 mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS) #draws the 21 landmarks and lines between them on the webcam frame.
-                if is_peace(hand_landmarks):
-                    print("Peace sign detected!")
-                    subprocess.run(["open", "-a", "Spotify"])
-                elif is_thumbsup(hand_landmarks):
-                    print("Thumbs up detected!")
-                    subprocess.run(["open", "-a", "Settings"])
-
+                current_time = time.time()
+                if current_time - last_triggered_time > cooldown_time:
+                    if is_peace(hand_landmarks):
+                        print("Peace sign detected!")
+                        subprocess.run(["open", "-a", "Spotify"])
+                        last_triggered_time = current_time
+                    elif is_thumbsup(hand_landmarks):
+                        print("Thumbs up detected!")
+                        subprocess.run(["open", "-a", "Settings"])
+                        last_triggered_time = current_time
+                    # elif is_openPalm(hand_landmarks):
+                    #     print("Open palm detected!")
+                    #     subprocess.run(["open", "-a", "Discord"])
+                    #     last_triggered_time = current_time
         cv2.imshow('Hand Tracking', frame) #opens a window called hand tracking
 
         if cv2.waitKey(1) & 0xFF == ord('q'): #pressing q exist the loop
