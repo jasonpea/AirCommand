@@ -1,6 +1,7 @@
 import cv2
 import mediapipe as mp
 import subprocess #for opening applications
+from landmark_points import *
 
 #initializing
 mp_hands = mp.solutions.hands # shortcut to access MediaPipe’s hand tracking module so no need to continuously write mpsolutionshands
@@ -8,46 +9,44 @@ mp_drawing = mp.solutions.drawing_utils
 
 #function that takes hand_landmarks object as input (this object contains 21 landmarks on each hand, each point having xyz coordinates)
 def is_peace(hand_landmarks): 
-    #tip, dip, pip, msc or smth (top to ridge between fingers)
-    tip_ids = [8, 12]  # Index and middle fingers
-    pip_ids = [6, 10]
 
-    #check if index and middle finger are extended
+    #check if index and middle finger are extended (idk why i made a counter for this idk why i had to be diff)
     extended = 0
-    for tip, pip in zip(tip_ids, pip_ids): #creates tuples where the first element of each input iterable is paired together, then the second elements are paired, and so on
-        if hand_landmarks.landmark[tip].y < hand_landmarks.landmark[pip].y: #if a finger's tip y coord < pip then extended++
-            extended += 1 
+    if hand_landmarks.landmark[INDEX_TIP].y < hand_landmarks.landmark[INDEX_PIP].y:
+        extended += 1
+    if hand_landmarks.landmark[MIDDLE_TIP].y < hand_landmarks.landmark[MIDDLE_PIP].y:
+        extended += 1
 
-    # Make sure other fingers are down
-    ring = hand_landmarks.landmark[16].y > hand_landmarks.landmark[14].y #check if ring finger tip is lower thn dip
-    pinky = hand_landmarks.landmark[20].y > hand_landmarks.landmark[18].y #check if pinky tip lower than dip
+    #Make sure other fingers are down
+    ring_folded = hand_landmarks.landmark[RING_TIP].y > hand_landmarks.landmark[RING_PIP].y
+    pinky_folded = hand_landmarks.landmark[PINKY_TIP].y > hand_landmarks.landmark[PINKY_PIP].y
+
+    #thumb differs based on hand
     for hand_landmarks, hand_handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
         label = hand_handedness.classification[0].label  # 'Left' or 'Right'
         if label == "Right":
-            thumb = hand_landmarks.landmark[4].x > hand_landmarks.landmark[2].x
+            thumb_folded = hand_landmarks.landmark[THUMB_TIP].x > hand_landmarks.landmark[THUMB_MCP].x
         else: #for left hand
-            thumb = hand_landmarks.landmark[4].x < hand_landmarks.landmark[2].x
+            thumb_folded = hand_landmarks.landmark[THUMB_TIP].x < hand_landmarks.landmark[THUMB_MCP].x
 
-    return extended == 2 and ring and pinky and thumb #return true if both middle + index extended and if ring and pinky return true
+    return extended == 2 and ring_folded and pinky_folded and thumb_folded
+def is_thumbsup(landmarks):
+    # Rule 1: Thumb tip is above the thumb IP (i.e., extended upwards in y-axis if hand is upright)
+    thumb_ext = landmarks.landmark[THUMB_TIP].y < landmarks.landmark[THUMB_IP].y < landmarks.landmark[THUMB_MCP].y
 
-def is_thumbsup(hand_landmarks):
-    thumb_tip = hand_landmarks.landmark[4]
-    thumb_base = hand_landmarks.landmark[2]
-    thumb_extended = thumb_tip.y < thumb_base.y and abs(thumb_tip.x - thumb_base.x) > 0.1
+    # Rule 2: All other finger tips are below their MCP (i.e., folded)
+    index_folded = landmarks.landmark[INDEX_TIP].y > landmarks.landmark[INDEX_MCP].y
+    middle_folded = landmarks.landmark[MIDDLE_TIP].y > landmarks.landmark[MIDDLE_MCP].y
+    ring_folded = landmarks.landmark[RING_TIP].y > landmarks.landmark[RING_MCP].y
+    pinky_folded = landmarks.landmark[PINKY_TIP].y > landmarks.landmark[PINKY_MCP].y
 
-    #doing smth diff here cuz i dont want to redundantly type out the same thing every time but tbf in hindsight typing it out like in line 22 wouldve been faster
-    finger_tips = [8, 12, 16, 20]
-    fingers_bent = True
-    for tip_id in finger_tips:
-        pip_id = tip_id - 2
-        if hand_landmarks.landmark[tip_id].y > hand_landmarks.landmark[pip_id].y:
-            fingers_bent = False
-            break  #Exit it any extended fingers are detected
+    if thumb_ext and index_folded and middle_folded and ring_folded and pinky_folded:
+        return True
+    return False
 
-    return thumb_extended and fingers_bent
 # Set up webcam and hand tracking
 #cap is an object apart of the cv2videocapture class 
-cap = cv2.VideoCapture(0) #0= default , 1= continuity 
+cap = cv2.VideoCapture(1) #0= default , 1= continuity 
 if not cap.isOpened():
     print("Error: Could not open webcam.")
 
@@ -75,12 +74,11 @@ with mp_hands.Hands( #mp.solutions.hands.Hands points at a folder of tools but m
                 if is_peace(hand_landmarks):
                     print("Peace sign detected!")
                     subprocess.run(["open", "-a", "Spotify"])
-                elif is_thumbsup:
+                elif is_thumbsup(hand_landmarks):
                     print("Thumbs up detected!")
                     subprocess.run(["open", "-a", "Settings"])
 
         cv2.imshow('Hand Tracking', frame) #opens a window called hand tracking
-
 
         if cv2.waitKey(1) & 0xFF == ord('q'): #pressing q exist the loop
             break
