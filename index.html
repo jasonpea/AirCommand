@@ -1,1 +1,18 @@
-<!-- ui for chrome extentsion (frontend)-->
+<!-- ui for app (frontend)-->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Gesture Control</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Load MediaPipe -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+</head>
+<body>
+  <div class="container">
+    <video id="webcam" autoplay muted></video>
+    <div id="feedback">Show ✌️ to open Spotify</div>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>

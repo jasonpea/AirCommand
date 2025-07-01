@@ -1,1 +1,19 @@
-/*ui for the popup
+/*ui for the popup*/
+
+body {
+    margin: 0;
+    font-family: Arial;
+  }
+  #webcam {
+    width: 640px;
+    height: 480px;
+    background: #222;
+  }
+  #feedback {
+    padding: 20px;
+    font-size: 1.5em;
+    text-align: center;
+  }
+  #webcam {
+    transform: scaleX(-1);  /* Mirror effect */
+  }
