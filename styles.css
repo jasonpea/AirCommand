@@ -8,6 +8,7 @@ body {
     width: 640px;
     height: 480px;
     background: #222;
+    transform: scaleX(-1);
   }
   #feedback {
     padding: 20px;
