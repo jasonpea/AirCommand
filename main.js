@@ -1,80 +1,60 @@
-const { app, BrowserWindow, ipcMain, session } = require('electron');
-const { PythonShell } = require('python-shell');
+const { app, BrowserWindow, ipcMain } = require('electron');
+const { spawn } = require('child_process');
 const path = require('path');
 
 let mainWindow;
+let pythonProcess = null;
 
 app.whenReady().then(() => {
-  // permissions for electron
-  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-    if (permission === 'media') {
-      console.log('Granting media permissions');
-      callback(true);
-    } else {
-      callback(false);
-    }
-  });
-
   mainWindow = new BrowserWindow({
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false,
-      enableRemoteModule: true
+      contextIsolation: false
     }
   });
 
-  // Debug Python path
-  const { execSync } = require('child_process');
-  try {
-    const pythonPath = execSync('which python3').toString().trim();
-    console.log('Detected Python path:', pythonPath);
-  } catch (e) {
-    console.error('Python not found:', e);
-  }
-
-  // IPC handler for gesture processing
+  // IPC handler with proper data validation
   ipcMain.on('process-gestures', (_, data) => {
-    console.log('\n--- Starting gesture detection ---');
-    console.log('Received data from renderer:', data);
-
-    if (!data) {
-      console.warn('No data received, sending empty object');
-      data = { hands: [] };
+    console.log('Starting gesture detection...');
+    
+    // kill previous process if exists
+    if (pythonProcess) {
+      pythonProcess.kill('SIGTERM');
     }
 
-    const options = {
-      mode: 'text',
-      pythonPath: '/usr/bin/python3', 
-      pythonOptions: ['-u'], 
-      scriptPath: __dirname,
-      args: [JSON.stringify(data)]
-    };
-
-    console.log('Launching Python script with options:', options);
-
-    const pyshell = new PythonShell('gesture_detector.py', options);
-
-    pyshell.on('message', (message) => {
-      console.log('PYTHON OUTPUT:', message);
+    const scriptPath = path.join(__dirname, 'gesture_detector.py');
+    
+    pythonProcess = spawn('python3', [
+      scriptPath,
+      JSON.stringify(data || {hands: []})
+    ], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: {
+        ...process.env,
+        DISPLAY: ':0' // not needed but good to have for linux systems
+      }
     });
 
-    pyshell.on('stderr', (error) => {
-      console.error('PYTHON ERROR:', error);
+    pythonProcess.stdout.on('data', (data) => {
+      const output = data.toString().trim();
+      if (output) console.log(`PYTHON: ${output}`);
     });
 
-    pyshell.on('close', (code) => {
-      console.log(`Python script exited with code ${code}`);
+    pythonProcess.stderr.on('data', (data) => {
+      console.error(`PYTHON ERROR: ${data.toString()}`);
+    });
+
+    pythonProcess.on('close', (code) => {
+      console.log(`Python process exited with code ${code}`);
     });
   });
 
   mainWindow.loadFile('index.html');
-  
-  // Open dev tools and console by default
-  mainWindow.webContents.openDevTools({ mode: 'bottom' });
-  console.log('Electron app ready');
+  mainWindow.webContents.openDevTools();
 });
 
-// Handle camera resource cleanup
 app.on('will-quit', () => {
-  console.log('App quitting - releasing resources');
+  if (pythonProcess) {
+    pythonProcess.kill('SIGTERM');
+  }
 });
