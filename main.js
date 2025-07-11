@@ -19,7 +19,7 @@ app.whenReady().then(() => {
       path.join(__dirname, 'gesture_detector.py'),
       { 
         args: [JSON.stringify(data)],
-        pythonPath: 'python3' 
+        pythonPath: '/usr/bin/python3' 
       },
       (err) => err && console.error("Python error:", err)
     );
