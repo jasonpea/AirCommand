@@ -1,21 +1,29 @@
-const { app, BrowserWindow } = require('electron')
-const path = require('path')
+const { app, BrowserWindow, ipcMain } = require('electron');
+const { PythonShell } = require('python-shell'); 
+const path = require('path');
 
-let mainWindow
+let mainWindow;
 
 app.whenReady().then(() => {
   mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
     }
-  })
+  });
 
-  // Load your HTML file
-  mainWindow.loadFile('index.html')
+  // IPC handler
+  ipcMain.on('process-gestures', (_, data) => {
+    PythonShell.run(
+      path.join(__dirname, 'gesture_detector.py'),
+      { 
+        args: [JSON.stringify(data)],
+        pythonPath: 'python3' 
+      },
+      (err) => err && console.error("Python error:", err)
+    );
+  });
 
-  // DevTools for debugging (remove in production)
-  mainWindow.webContents.openDevTools()
-})
+  mainWindow.loadFile('index.html');
+  mainWindow.webContents.openDevTools(); // debug
+});
