@@ -7,9 +7,9 @@ import numpy as np
 import sys
 import json
 
-print("Python script started!")  #debug
-data = json.loads(sys.argv[1])
-print(f"Received {len(data['hands'])} hands")   #debug
+# print("Python script started!")  #debug
+# data = json.loads(sys.argv[1])
+# print(f"Received {len(data['hands'])} hands") 
 
 #initializing
 mp_hands = mp.solutions.hands # shortcut to access MediaPipe’s hand tracking module so no need to continuously write mpsolutionshands
