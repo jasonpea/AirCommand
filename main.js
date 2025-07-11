@@ -14,6 +14,7 @@ app.whenReady().then(() => {
 
   // IPC handler
   ipcMain.on('process-gestures', (_, data) => {
+    console.log('Received from renderer:', data);
     PythonShell.run(
       path.join(__dirname, 'gesture_detector.py'),
       { 

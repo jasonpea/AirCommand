@@ -37,9 +37,10 @@ const processFrame = async () => {
 
 //  results (
 hands.onResults((results) => {
-  if (!results.multiHandLandmarks) {
-    feedback.textContent = "No hands detected";
-    return;
+    console.log('MediaPipe results:', results); //debug
+    if (!results.multiHandLandmarks) {
+        feedback.textContent = "No hands detected";
+        return;
   }
 
   // conver to python data structure
