@@ -1,4 +1,3 @@
-
 //DOM elements
 const { ipcRenderer } = require('electron');
 const video = document.getElementById('webcam');
