@@ -1,14 +1,15 @@
-//DOM elements
 const { ipcRenderer } = require('electron');
 const video = document.getElementById('webcam');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
 const feedback = document.getElementById('feedback');
 
-// mediapipe Hands config 
+// init MediaPipe hands
 const hands = new Hands({
   locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
 });
 
-// backend settings
+// config hand tracking
 hands.setOptions({
   maxNumHands: 2,
   modelComplexity: 1,
@@ -16,52 +17,72 @@ hands.setOptions({
   minTrackingConfidence: 0.7
 });
 
-// convert coordinates to Python-compatible format
+// convert landmarks to serializable format
 function formatLandmarks(landmarks) {
   return landmarks.map(lm => ({
     x: lm.x,
-    y: lm.y,
+    y: lm.y, 
     z: lm.z,
     visibility: lm.visibility
   }));
 }
 
-// Process each frame
+// draw landmarks on canvas (js for visualization)
+function drawLandmarks(landmarks) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  if (!landmarks) return;
+  
+  ctx.fillStyle = '#FF0000';
+  landmarks.forEach(lm => {
+    const x = lm.x * canvas.width;
+    const y = lm.y * canvas.height;
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, 2 * Math.PI);
+    ctx.fill();
+  });
+}
+
+// process each frame
 const processFrame = async () => {
   if (!video.srcObject) return;
   
+  // Submit frame to MediaPipe
   await hands.send({ image: video });
   requestAnimationFrame(processFrame);
 };
 
-//  results (
+// handle mp results
 hands.onResults((results) => {
-    console.log('MediaPipe results:', results); //debug
-    if (!results.multiHandLandmarks) {
-        feedback.textContent = "No hands detected";
-        return;
+  // Optional: Draw landmarks on frontend canvas
+  if (results.multiHandLandmarks) {
+    drawLandmarks(results.multiHandLandmarks[0]); // Draw first hand
   }
 
-  // conver to python data structure
-  const handsData = results.multiHandLandmarks.map((landmarks, i) => ({
+  // prep data for backend
+  const handsData = results.multiHandLandmarks?.map((landmarks, i) => ({
     landmarks: formatLandmarks(landmarks),
-    handedness: results.multiHandedness[i].classification[0].label
-  }));
+    handedness: results.multiHandedness[i].classification[0].label,
+    gestureHint: getGestureHint(landmarks) // Optional: Add simple frontend gesture hint
+  })) || [];
 
-  // Send to  backend
+  // send to backend via IPC
   ipcRenderer.send('process-gestures', {
     hands: handsData,
+    timestamp: Date.now(),
     imageSize: {
       width: video.videoWidth,
       height: video.videoHeight
     }
   });
 
-  // Visual feedback
-  feedback.textContent = `Tracking ${handsData.length} hand(s)`;
+  // js for debug and user exp(UI feedback)
+  feedback.textContent = handsData.length 
+    ? `Tracking ${handsData.length} hand(s)` 
+    : "No hands detected";
 });
 
-// Initialize camera (matches Python settings)
+// init camera
 async function initCamera() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -74,9 +95,13 @@ async function initCamera() {
     
     video.srcObject = stream;
     video.onloadedmetadata = () => {
-      video.style.transform = 'scaleX(-1)'; // Mirror like Python's cv2.flip()
+      // mirror video feed
+      video.style.transform = 'scaleX(-1)';
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
       feedback.textContent = "Ready - show ✌️ or 👍";
-      processFrame(); // Start processing
+      processFrame(); // start processing loop
     };
     
   } catch (err) {
@@ -85,5 +110,5 @@ async function initCamera() {
   }
 }
 
-// Start the app
+// start the app
 initCamera();
