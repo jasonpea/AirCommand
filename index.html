@@ -1,18 +1,71 @@
-<!-- ui for app (frontend)-->
-
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <title>Gesture Control</title>
-  <link rel="stylesheet" href="styles.css">
-  <!-- Load MediaPipe -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <style>
+    /* === ADD THIS CSS === */
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #111;
+      font-family: Arial, sans-serif;
+    }
+    
+    #webcam {
+      position: absolute;
+      visibility: hidden;
+    }
+    
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      transform: scaleX(-1); /* Mirror effect */
+    }
+    
+    #feedback {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: white;
+      background: rgba(0,0,0,0.7);
+      padding: 10px 15px;
+      border-radius: 5px;
+      font-size: 18px;
+    }
+    
+    #instructions {
+      position: absolute;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: white;
+      background: rgba(0,0,0,0.7);
+      padding: 10px;
+      font-size: 16px;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <video id="webcam" autoplay muted></video>
-    <div id="feedback">Show ✌️ to open Spotify</div>
-  </div>
+  <!-- === ADD THESE ELEMENTS === -->
+  <video id="webcam" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
+  <div id="feedback"></div>
+  <div id="instructions">Show ✌️ to open Spotify | 👍 for Settings</div>
+
+  <!-- Load MediaPipe (must be before renderer.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  
+  <!-- Load Electron and your script -->
+  <script>
+    // Polyfill for Electron's require
+    window.require = window.require || function() { 
+      return { ipcRenderer: { send: console.log } };
+    };
+  </script>
   <script src="renderer.js"></script>
 </body>
 </html>
