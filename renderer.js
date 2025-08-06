@@ -29,10 +29,9 @@ function formatLandmarks(landmarks) {
 
 // draw landmarks on canvas (js for visualization)
 function drawLandmarks(landmarks) {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
   if (!landmarks) return;
   
+  // Keep existing landmark drawing code
   ctx.fillStyle = '#FF0000';
   landmarks.forEach(lm => {
     const x = lm.x * canvas.width;
@@ -47,14 +46,19 @@ function drawLandmarks(landmarks) {
 const processFrame = async () => {
   if (!video.srcObject) return;
   
-  // Submit frame to MediaPipe
+  // Draw video frame first
+  ctx.save();
+  ctx.scale(-1, 1); // Mirror effect
+  ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+  ctx.restore();
+  
+  // Then process with MediaPipe
   await hands.send({ image: video });
   requestAnimationFrame(processFrame);
 };
 
 // handle mp results
 hands.onResults((results) => {
-  // Optional: Draw landmarks on frontend canvas
   if (results.multiHandLandmarks) {
     drawLandmarks(results.multiHandLandmarks[0]); // Draw first hand
   }
