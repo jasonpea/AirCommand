@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Gesture Control</title>
   <style>
-    /* === ADD THIS CSS === */
     body {
       margin: 0;
       overflow: hidden;
@@ -50,13 +49,12 @@
   </style>
 </head>
 <body>
-  <!-- === ADD THESE ELEMENTS === -->
   <video id="webcam" autoplay playsinline></video>
   <canvas id="canvas"></canvas>
   <div id="feedback"></div>
   <div id="instructions">Show ✌️ to open Spotify | 👍 for Settings</div>
 
-  <!-- Load MediaPipe (must be before renderer.js) -->
+  <!-- Load MediaPipe-->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
   
   <!-- Load Electron and your script -->

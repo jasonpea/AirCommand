@@ -1,7 +1,7 @@
 const { ipcRenderer } = require('electron');
 const video = document.getElementById('webcam');
 const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
 const feedback = document.getElementById('feedback');
 
 // init MediaPipe hands
@@ -85,28 +85,33 @@ hands.onResults((results) => {
 // init camera
 async function initCamera() {
   try {
+    // 1. Get stream with more flexible constraints
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
-        width: 1280,
-        height: 720,
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
         facingMode: 'user'
       }
     });
-    
+
+    // 2. Explicit video setup
     video.srcObject = stream;
-    video.onloadedmetadata = () => {
-      // mirror video feed
-      video.style.transform = 'scaleX(-1)';
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-      feedback.textContent = "Ready - show ✌️ or 👍";
-      processFrame(); // start processing loop
-    };
-    
+    video.play().catch(e => console.error("Video play failed:", e));
+
+    // 3. Wait for video to be ready
+    await new Promise((resolve) => {
+      video.onloadedmetadata = () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        resolve();
+      };
+    });
+
+    feedback.textContent = "Ready - show ✌️ or 👍";
+    processFrame(); // Start processing
   } catch (err) {
-    feedback.textContent = `Camera Error: ${err.message}`;
-    console.error(err);
+    feedback.textContent = `Camera Error: ${err.name}`;
+    console.error("Camera init error:", err);
   }
 }
 
