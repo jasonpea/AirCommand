@@ -42,24 +42,28 @@ function drawLandmarks(landmarks) {
   });
 }
 
-// process each frame
-const processFrame = async () => {
+//  drawing
+function drawVideoFrame() {
   if (!video.srcObject) return;
   
-  // clear canvas first
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
   ctx.save();
-  ctx.scale(-1, 1); // Mirror
+  ctx.scale(-1, 1); // Mirror effect
   ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
   ctx.restore();
   
+  requestAnimationFrame(drawVideoFrame);
+}
+
+// processFrame to only handle MediaPipe
+const processFrame = async () => {
+  if (!video.srcObject) return;
   await hands.send({ image: video });
-  requestAnimationFrame(processFrame);
 };
 
 // handle mp results
 hands.onResults((results) => {
+  drawVideoFrame();
+
   if (results.multiHandLandmarks) {
     drawLandmarks(results.multiHandLandmarks[0]); // draw first hand
   }
@@ -90,7 +94,6 @@ hands.onResults((results) => {
 // init camera
 async function initCamera() {
   try {
-    // 1. Get stream with more flexible constraints
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
         width: { ideal: 1280 },
@@ -99,22 +102,17 @@ async function initCamera() {
       }
     });
 
-    // 2. Explicit video setup
     video.srcObject = stream;
-    video.play().catch(e => console.error("Video play failed:", e));
-    console.log('Video dimensions:', video.videoWidth, video.videoHeight);
+    await video.play();
 
-    // 3. Wait for video to be ready
-    await new Promise((resolve) => {
-      video.onloadedmetadata = () => {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        resolve();
-      };
-    });
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
 
+    // Start both loops
+    drawVideoFrame(); // Continuous video rendering
+    setInterval(() => processFrame(), 100); // MediaPipe at 10fps
+    
     feedback.textContent = "Ready - show ✌️ or 👍";
-    processFrame(); // Start processing
   } catch (err) {
     feedback.textContent = `Camera Error: ${err.name}`;
     console.error("Camera init error:", err);
