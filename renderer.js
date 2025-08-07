@@ -46,13 +46,14 @@ function drawLandmarks(landmarks) {
 const processFrame = async () => {
   if (!video.srcObject) return;
   
-  // Draw video frame first
+  // clear canvas first
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
   ctx.save();
-  ctx.scale(-1, 1); // Mirror effect
+  ctx.scale(-1, 1); // Mirror
   ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
   ctx.restore();
   
-  // Then process with MediaPipe
   await hands.send({ image: video });
   requestAnimationFrame(processFrame);
 };
@@ -60,14 +61,14 @@ const processFrame = async () => {
 // handle mp results
 hands.onResults((results) => {
   if (results.multiHandLandmarks) {
-    drawLandmarks(results.multiHandLandmarks[0]); // Draw first hand
+    drawLandmarks(results.multiHandLandmarks[0]); // draw first hand
   }
 
   // prep data for backend
   const handsData = results.multiHandLandmarks?.map((landmarks, i) => ({
     landmarks: formatLandmarks(landmarks),
     handedness: results.multiHandedness[i].classification[0].label,
-    gestureHint: getGestureHint(landmarks) // Optional: Add simple frontend gesture hint
+    gestureHint: getGestureHint(landmarks) // gesture hints
   })) || [];
 
   // send to backend via IPC
@@ -101,6 +102,7 @@ async function initCamera() {
     // 2. Explicit video setup
     video.srcObject = stream;
     video.play().catch(e => console.error("Video play failed:", e));
+    console.log('Video dimensions:', video.videoWidth, video.videoHeight);
 
     // 3. Wait for video to be ready
     await new Promise((resolve) => {
