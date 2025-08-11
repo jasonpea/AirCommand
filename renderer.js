@@ -31,7 +31,10 @@ function formatLandmarks(landmarks) {
 function drawLandmarks(landmarks) {
   if (!landmarks) return;
   
-  // Keep existing landmark drawing code
+  ctx.save();
+  ctx.scale(-1, 1); // apply mirror only for landmarks
+  ctx.translate(-canvas.width, 0); // adjust for mirror transform
+  
   ctx.fillStyle = '#FF0000';
   landmarks.forEach(lm => {
     const x = lm.x * canvas.width;
@@ -40,16 +43,16 @@ function drawLandmarks(landmarks) {
     ctx.arc(x, y, 5, 0, 2 * Math.PI);
     ctx.fill();
   });
+  
+  ctx.restore();
 }
 
-//  drawing
+// drawing
 function drawVideoFrame() {
   if (!video.srcObject) return;
   
-  ctx.save();
-  ctx.scale(-1, 1); // Mirror effect
-  ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
-  ctx.restore();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   
   requestAnimationFrame(drawVideoFrame);
 }
@@ -57,12 +60,22 @@ function drawVideoFrame() {
 // processFrame to only handle MediaPipe
 const processFrame = async () => {
   if (!video.srcObject) return;
-  await hands.send({ image: video });
+  
+  // process with MediaPipe (using current canvas content)
+  await hands.send({ image: canvas }); // send canvas instead of video
+  
+  // now draw the mirrored display
+  ctx.save();
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+  ctx.restore();
 };
 
 // handle mp results
-hands.onResults((results) => {
-  drawVideoFrame();
+hands.onResults((results) => {  
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
 
   if (results.multiHandLandmarks) {
     drawLandmarks(results.multiHandLandmarks[0]); // draw first hand
@@ -108,9 +121,9 @@ async function initCamera() {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
-    // Start both loops
-    drawVideoFrame(); // Continuous video rendering
-    setInterval(() => processFrame(), 100); // MediaPipe at 10fps
+   
+    drawVideoFrame(); // continous video background
+    setInterval(processFrame, 100); // process at 10fps
     
     feedback.textContent = "Ready - show ✌️ or 👍";
   } catch (err) {
@@ -118,6 +131,5 @@ async function initCamera() {
     console.error("Camera init error:", err);
   }
 }
-
 // start the app
 initCamera();
