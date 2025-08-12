@@ -13,39 +13,31 @@ app.whenReady().then(() => {
     }
   });
 
-  // IPC handler with proper data validation
+  
   ipcMain.on('process-gestures', (_, data) => {
-    console.log('Starting gesture detection...');
-    
-    // kill previous process if exists
     if (pythonProcess) {
-      pythonProcess.kill('SIGTERM');
+      pythonProcess.kill('SIGKILL');
     }
-
-    const scriptPath = path.join(__dirname, 'gesture_detector.py');
-    
+  
     pythonProcess = spawn('python3', [
-      scriptPath,
+      path.join(__dirname, 'gesture_detector.py'),
       JSON.stringify(data || {hands: []})
     ], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: {
-        ...process.env,
-        DISPLAY: ':0' // not needed but good to have for linux systems
-      }
+      stdio: ['ignore', 'pipe', 'pipe'],
+      shell: true
     });
-
+  
     pythonProcess.stdout.on('data', (data) => {
       const output = data.toString().trim();
-      if (output) console.log(`PYTHON: ${output}`);
+      if (output === "PEACE_DETECTED") {
+        require('child_process').exec('open -a Spotify');
+      } else if (output === "THUMBSUP_DETECTED") {
+        require('child_process').exec('open -a "System Preferences"');
+      }
     });
-
+  
     pythonProcess.stderr.on('data', (data) => {
-      console.error(`PYTHON ERROR: ${data.toString()}`);
-    });
-
-    pythonProcess.on('close', (code) => {
-      console.log(`Python process exited with code ${code}`);
+      console.error('Python Error:', data.toString());
     });
   });
 

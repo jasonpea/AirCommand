@@ -4,6 +4,12 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 const feedback = document.getElementById('feedback');
 
+// Debug flags
+const DEBUG = true;
+function debugLog(...args) {
+  if (DEBUG) console.log('[DEBUG]', ...args);
+}
+
 // init MediaPipe hands
 const hands = new Hands({
   locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
@@ -72,36 +78,36 @@ const processFrame = async () => {
 };
 
 // handle mp results
-hands.onResults((results) => {  
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-
-  if (results.multiHandLandmarks) {
-    drawLandmarks(results.multiHandLandmarks[0]); // draw first hand
+hands.onResults((results) => {
+  // Debug: Verify landmarks
+  console.log("Raw MediaPipe output:", results);
+  
+  if (!results.multiHandLandmarks) {
+    feedback.textContent = "No hands detected";
+    return;
   }
 
-  // prep data for backend
-  const handsData = results.multiHandLandmarks?.map((landmarks, i) => ({
-    landmarks: formatLandmarks(landmarks),
-    handedness: results.multiHandedness[i].classification[0].label,
-    gestureHint: getGestureHint(landmarks) // gesture hints
-  })) || [];
+  // draw landmarks
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+  ctx.restore();
 
-  // send to backend via IPC
+  // send simplified data
   ipcRenderer.send('process-gestures', {
-    hands: handsData,
-    timestamp: Date.now(),
+    hands: results.multiHandLandmarks.map(landmarks => ({
+      landmarks: landmarks.map(lm => ({
+        x: lm.x,
+        y: lm.y,
+        z: lm.z 
+      }))
+    })),
     imageSize: {
-      width: video.videoWidth,
-      height: video.videoHeight
+      width: canvas.width,
+      height: canvas.height
     }
   });
-
-  // js for debug and user exp(UI feedback)
-  feedback.textContent = handsData.length 
-    ? `Tracking ${handsData.length} hand(s)` 
-    : "No hands detected";
 });
 
 // init camera

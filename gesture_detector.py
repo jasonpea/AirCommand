@@ -72,43 +72,68 @@ def is_thumbsup(landmarks):
 cooldown_time = 3  
 last_triggered_time = 0  #initialize last triggered time
 
-#new main loop for reading json input from frontend
-for line in sys.stdin: #for each line in standard input
+def main():
     try:
-        data = json.loads(line)  #Parse incoming json
-
-        #skip/ignores frame if no hands were detected
-        if "hands" not in data or not data["hands"]:
-            continue
-
+        data = json.loads(sys.argv[1])  # get data from CLI argument cuz electron sends arguements
+        if "hands" not in data:
+            return
+            
         current_time = time.time()
-
-        #loop over all hands
-        for hand_data in data["hands"]: #looping thru each dictionary inside list data[hands]
-            landmarks = hand_data["landmarks"] #accessing landmarks in the hand_data dictionary 
-            handedness = hand_data.get("handedness", "Right")  # optional
-
-            # Create a dummy object to match your functions' expectations
-            hand_obj = HandLandmarks(landmarks) #creating obj that behaves like medapipe so i dont have to change my isthumbsup & peace logic :)
-
-            # Check cooldown
-            if current_time - last_triggered_time < cooldown_time:
-                continue
-
-            # Run gesture recognition
+        if current_time - last_triggered_time < cooldown_time:
+            return
+            
+        for hand in data["hands"]:
+            hand_obj = HandLandmarks(hand["landmarks"])
             if is_peace(hand_obj):
-                print("Peace sign detected!", flush=True)
-                subprocess.run(["open", "-a", "Spotify"])
+                print("PEACE_DETECTED", flush=True)
                 last_triggered_time = current_time
             elif is_thumbsup(hand_obj):
-                print("Thumbs up detected!", flush=True)
-                subprocess.run(["open", "-a", "Settings"])
+                print("THUMBSUP_DETECTED", flush=True)
                 last_triggered_time = current_time
-
-    except json.JSONDecodeError:
-        print("Invalid JSON received.", flush=True) #flush forces message out to terminal immediately
+                
     except Exception as e:
-        print(f"Error processing gesture: {e}", flush=True) #storing the error as var e
+        print(f"ERROR: {str(e)}", flush=True)
+
+if __name__ == "__main__":
+    main()
+
+#new main loop for reading json input from frontend
+# for line in sys.stdin: #for each line in standard input
+#     try:
+#         data = json.loads(line)  #Parse incoming json
+
+#         #skip/ignores frame if no hands were detected
+#         if "hands" not in data or not data["hands"]:
+#             continue
+
+#         current_time = time.time()
+
+#         #loop over all hands
+#         for hand_data in data["hands"]: #looping thru each dictionary inside list data[hands]
+#             landmarks = hand_data["landmarks"] #accessing landmarks in the hand_data dictionary 
+#             handedness = hand_data.get("handedness", "Right")  # optional
+
+#             # Create a dummy object to match your functions' expectations
+#             hand_obj = HandLandmarks(landmarks) #creating obj that behaves like medapipe so i dont have to change my isthumbsup & peace logic :)
+
+#             # Check cooldown
+#             if current_time - last_triggered_time < cooldown_time:
+#                 continue
+
+#             # Run gesture recognition
+#             if is_peace(hand_obj):
+#                 print("Peace sign detected!", flush=True)
+#                 subprocess.run(["open", "-a", "Spotify"])
+#                 last_triggered_time = current_time
+#             elif is_thumbsup(hand_obj):
+#                 print("Thumbs up detected!", flush=True)
+#                 subprocess.run(["open", "-a", "Settings"])
+#                 last_triggered_time = current_time
+
+#     except json.JSONDecodeError:
+#         print("Invalid JSON received.", flush=True) #flush forces message out to terminal immediately
+#     except Exception as e:
+#         print(f"Error processing gesture: {e}", flush=True) #storing the error as var e
 
 
 # #with is used with file handling, will close right after execution
