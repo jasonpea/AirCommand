@@ -6,6 +6,10 @@ import sys
 import time
 from landmark_points import *
 
+#setting up cooldown timer
+cooldown_time = 3  
+last_triggered_time = 0  #initialize last triggered time
+
 # #initializing
 # mp_hands = mp.solutions.hands # shortcut to access MediaPipe’s hand tracking module so no need to continuously write mpsolutionshands
 # mp_drawing = mp.solutions.drawing_utils 
@@ -25,7 +29,7 @@ class HandLandmarks:
         self.landmark = [Landmark(**lm) for lm in landmarks] #loops over every dictionary in landarks and convert each into a landmark object
 
 #function that takes hand_landmarks object as input (this object contains 21 landmarks on each hand, each point having xyz coordinates)
-def is_peace(hand_landmarks): 
+def is_peace(hand_landmarks, handedness="Right"): 
 
     #check if index and middle finger are extended (idk why i made a counter for this idk why i had to be diff)
     extended = 0
@@ -39,15 +43,15 @@ def is_peace(hand_landmarks):
     pinky_folded = hand_landmarks.landmark[PINKY_TIP].y > hand_landmarks.landmark[PINKY_PIP].y
 
     #thumb differs based on hand
-    for hand_landmarks, hand_handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
-        label = hand_handedness.classification[0].label  # 'Left' or 'Right'
-        if label == "Right":
-            thumb_folded = hand_landmarks.landmark[THUMB_TIP].x > hand_landmarks.landmark[THUMB_MCP].x
-        else: #for left hand
-            thumb_folded = hand_landmarks.landmark[THUMB_TIP].x < hand_landmarks.landmark[THUMB_MCP].x
+    if handedness == "Right":
+        thumb_folded = hand_landmarks.landmark[THUMB_TIP].x > hand_landmarks.landmark[THUMB_MCP].x
+    else: #for left hand
+        thumb_folded = hand_landmarks.landmark[THUMB_TIP].x < hand_landmarks.landmark[THUMB_MCP].x
 
     return extended == 2 and ring_folded and pinky_folded and thumb_folded
-def is_thumbsup(landmarks):
+
+def is_thumbsup(landmarks, handedness="Right"): #handness parameter not needed here yet, js here for consistency and just in case
+
     # Rule 1: Thumb tip is above the thumb IP (i.e., extended upwards in y-axis if hand is upright)
     thumb_ext = landmarks.landmark[THUMB_TIP].y < landmarks.landmark[THUMB_IP].y < landmarks.landmark[THUMB_MCP].y
 
@@ -68,11 +72,11 @@ def is_thumbsup(landmarks):
 # if not cap.isOpened():
 #     print("Error: Could not open webcam.")
 
-#setting up cooldown timer
-cooldown_time = 3  
-last_triggered_time = 0  #initialize last triggered time
+
 
 def main():
+    global last_triggered_time
+    
     try:
         data = json.loads(sys.argv[1])  # get data from CLI argument cuz electron sends arguements
         if "hands" not in data:
@@ -84,11 +88,15 @@ def main():
             
         for hand in data["hands"]:
             hand_obj = HandLandmarks(hand["landmarks"])
-            if is_peace(hand_obj):
+            handedness = hand.get("handedness", "Right")
+
+            if is_peace(hand_obj, handedness):
                 print("PEACE_DETECTED", flush=True)
+                subprocess.run(["open", "-a", "Spotify"])
                 last_triggered_time = current_time
-            elif is_thumbsup(hand_obj):
+            elif is_thumbsup(hand_obj, handedness):
                 print("THUMBSUP_DETECTED", flush=True)
+                subprocess.run(["open", "-a", "Settings"])
                 last_triggered_time = current_time
                 
     except Exception as e:
