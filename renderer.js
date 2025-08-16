@@ -79,35 +79,61 @@ const processFrame = async () => {
 
 // handle mp results
 hands.onResults((results) => {
-  // Debug: Verify landmarks
-  console.log("Raw MediaPipe output:", results);
-  
-  if (!results.multiHandLandmarks) {
-    feedback.textContent = "No hands detected";
-    return;
-  }
-
-  // draw landmarks
+  // 1. Clear the entire canvas first
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // 2. Draw the mirrored video feed
   ctx.save();
-  ctx.scale(-1, 1);
+  ctx.scale(-1, 1); // Mirror effect
   ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
   ctx.restore();
 
-  // send simplified data
-  ipcRenderer.send('process-gestures', {
-    hands: results.multiHandLandmarks.map(landmarks => ({
-      landmarks: landmarks.map(lm => ({
-        x: lm.x,
-        y: lm.y,
-        z: lm.z 
-      }))
-    })),
-    imageSize: {
-      width: canvas.width,
-      height: canvas.height
-    }
-  });
+  // 3. Draw landmarks if hands are detected (NEW CODE)
+  if (results.multiHandLandmarks) {
+    // Draw all hands
+    results.multiHandLandmarks.forEach(landmarks => {
+      // Draw connections first (in blue)
+      ctx.strokeStyle = '#00FFFF';
+      ctx.lineWidth = 3;
+      mp.HAND_CONNECTIONS.forEach(connection => {
+        const [startIdx, endIdx] = connection;
+        const start = landmarks[startIdx];
+        const end = landmarks[endIdx];
+        ctx.beginPath();
+        ctx.moveTo(start.x * canvas.width, start.y * canvas.height);
+        ctx.lineTo(end.x * canvas.width, end.y * canvas.height);
+        ctx.stroke();
+      });
+
+      // Then draw landmarks (in red)
+      ctx.fillStyle = '#FF0000';
+      landmarks.forEach(landmark => {
+        ctx.beginPath();
+        ctx.arc(
+          landmark.x * canvas.width, 
+          landmark.y * canvas.height, 
+          5, 0, 2 * Math.PI
+        );
+        ctx.fill();
+      });
+    });
+
+    // Send data to backend (keep your existing IPC code)
+    const handsData = results.multiHandLandmarks.map((landmarks, i) => ({
+      landmarks: formatLandmarks(landmarks),
+      handedness: results.multiHandedness[i].classification[0].label
+    }));
+    
+    ipcRenderer.send('process-gestures', {
+      hands: handsData,
+      imageSize: { width: canvas.width, height: canvas.height }
+    });
+  }
+
+  // Update UI feedback
+  feedback.textContent = results.multiHandLandmarks?.length 
+    ? `Tracking ${results.multiHandLandmarks.length} hand(s)` 
+    : "No hands detected";
 });
 
 // init camera
