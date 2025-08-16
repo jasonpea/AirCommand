@@ -79,20 +79,20 @@ const processFrame = async () => {
 
 // handle mp results
 hands.onResults((results) => {
-  // 1. Clear the entire canvas first
+  // 1. clear canvas first
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   
-  // 2. Draw the mirrored video feed
+  // 2. draw the mirrored video feed
   ctx.save();
   ctx.scale(-1, 1); // Mirror effect
   ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
   ctx.restore();
 
-  // 3. Draw landmarks if hands are detected (NEW CODE)
+  // 3. draw landmarks if hands are detected 
   if (results.multiHandLandmarks) {
-    // Draw all hands
+    // draw all hands
     results.multiHandLandmarks.forEach(landmarks => {
-      // Draw connections first (in blue)
+      // draw connections first 
       ctx.strokeStyle = '#00FFFF';
       ctx.lineWidth = 3;
       mp.HAND_CONNECTIONS.forEach(connection => {
@@ -105,7 +105,7 @@ hands.onResults((results) => {
         ctx.stroke();
       });
 
-      // Then draw landmarks (in red)
+      // draw landmarks (in red)
       ctx.fillStyle = '#FF0000';
       landmarks.forEach(landmark => {
         ctx.beginPath();
@@ -118,7 +118,7 @@ hands.onResults((results) => {
       });
     });
 
-    // Send data to backend (keep your existing IPC code)
+    // Send data to backend 
     const handsData = results.multiHandLandmarks.map((landmarks, i) => ({
       landmarks: formatLandmarks(landmarks),
       handedness: results.multiHandedness[i].classification[0].label
