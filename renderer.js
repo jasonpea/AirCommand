@@ -54,14 +54,14 @@ function drawLandmarks(landmarks) {
 }
 
 // drawing
-function drawVideoFrame() {
-  if (!video.srcObject) return;
+// function drawVideoFrame() {
+//   if (!video.srcObject) return;
   
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+//   ctx.clearRect(0, 0, canvas.width, canvas.height);
+//   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   
-  requestAnimationFrame(drawVideoFrame);
-}
+//   requestAnimationFrame(drawVideoFrame);
+// }
 
 // processFrame to only handle MediaPipe
 const processFrame = async () => {
@@ -127,14 +127,14 @@ hands.onResults((results) => {
     }));
 
     // Draw landmarks (add this after ctx.restore())
-  ctx.fillStyle = '#FF0000'; // Red dots
-  results.multiHandLandmarks[0].forEach(landmark => {
-    const x = landmark.x * canvas.width;
-    const y = landmark.y * canvas.height;
-    ctx.beginPath();
-    ctx.arc(x, y, 5, 0, 2 * Math.PI); // 5px radius circles
-    ctx.fill();
-  });
+  // ctx.fillStyle = '#FF0000'; // Red dots
+  // results.multiHandLandmarks[0].forEach(landmark => {
+  //   const x = landmark.x * canvas.width;
+  //   const y = landmark.y * canvas.height;
+  //   ctx.beginPath();
+  //   ctx.arc(x, y, 5, 0, 2 * Math.PI); // 5px radius circles
+  //   ctx.fill();
+  // });
     
     ipcRenderer.send('process-gestures', {
       hands: handsData,
@@ -166,7 +166,7 @@ async function initCamera() {
     canvas.height = video.videoHeight;
 
    
-    drawVideoFrame(); // continous video background
+    // drawVideoFrame(); // continous video background
     setInterval(processFrame, 100); // process at 10fps
     
     feedback.textContent = "Ready - show ✌️ or 👍";
