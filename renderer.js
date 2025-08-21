@@ -68,7 +68,7 @@ const processFrame = async () => {
   if (!video.srcObject) return;
   
   // process with MediaPipe (using current canvas content)
-  await hands.send({ image: canvas }); // send canvas instead of video
+  await hands.send({ image: video }); // send canvas instead of video
   
   // now draw the mirrored display
   ctx.save();
