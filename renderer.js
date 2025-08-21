@@ -88,6 +88,8 @@ hands.onResults((results) => {
   ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
   ctx.restore();
 
+  drawLandmarks(results.multiHandLandmarks[0]); 
+
   // 3. draw landmarks if hands are detected 
   if (results.multiHandLandmarks) {
     // draw all hands
