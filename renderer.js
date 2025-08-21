@@ -125,6 +125,16 @@ hands.onResults((results) => {
       landmarks: formatLandmarks(landmarks),
       handedness: results.multiHandedness[i].classification[0].label
     }));
+
+    // Draw landmarks (add this after ctx.restore())
+  ctx.fillStyle = '#FF0000'; // Red dots
+  results.multiHandLandmarks[0].forEach(landmark => {
+    const x = landmark.x * canvas.width;
+    const y = landmark.y * canvas.height;
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, 2 * Math.PI); // 5px radius circles
+    ctx.fill();
+  });
     
     ipcRenderer.send('process-gestures', {
       hands: handsData,
