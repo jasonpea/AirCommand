@@ -1,51 +1,53 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Gesture Control</title>
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: #000;
-    }
-    #canvas {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      transform: scaleX(-1);
-    }
-    #webcam {
-      display: none;
-    }
-    #feedback {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      color: white;
-      background: rgba(0,0,0,0.5);
-      padding: 5px;
-      font-family: Arial;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Gesture Control App</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #111;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        
+        #canvas {
+            display: block;
+            margin: 0 auto;
+            border: 2px solid #333;
+            transform: scaleX(-1); /* Mirror effect */
+        }
+        
+        #feedback {
+            text-align: center;
+            margin: 20px;
+            font-size: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .instructions {
+            text-align: center;
+            margin: 10px;
+            color: #ccc;
+        }
+    </style>
 </head>
 <body>
-  <video id="webcam" autoplay playsinline></video>
-  <canvas id="canvas"></canvas>
-  <div id="feedback"></div>
-  <div id="instructions">Show ✌️ to open Spotify | 👍 for Settings</div>
+    <h1 style="text-align: center;">Gesture Control App</h1>
+    
+    <div class="instructions">
+        Show ✌️ to open Spotify | 👍 to open Settings
+    </div>
+    
+    <video id="webcam" autoplay playsinline hidden></video>
+    <canvas id="canvas" width="1280" height="720"></canvas>
+    <div id="feedback">Initializing camera...</div>
 
-  <!-- Load MediaPipe-->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-  
-  <!-- Load Electron and your script -->
-  <script>
-    // Polyfill for Electron's require
-    window.require = window.require || function() { 
-      return { ipcRenderer: { send: console.log } };
-    };
-  </script>
-  <script src="renderer.js"></script>
+    <!-- Load MediaPipe -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="renderer.js"></script>
 </body>
 </html>

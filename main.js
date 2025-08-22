@@ -6,47 +6,48 @@ let mainWindow;
 let pythonProcess = null;
 
 app.whenReady().then(() => {
-  mainWindow = new BrowserWindow({
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
-    }
-  });
+    const { systemPreferences } = require('electron');
+    systemPreferences.askForMediaAccess('camera');
 
-  
-  ipcMain.on('process-gestures', (_, data) => {
-    if (pythonProcess) {
-      pythonProcess.kill('SIGKILL');
-    }
-  
-    pythonProcess = spawn('python3', [
-      path.join(__dirname, 'gesture_detector.py'),
-      JSON.stringify(data || {hands: []})
-    ], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-      shell: true
+    mainWindow = new BrowserWindow({
+        width: 1400,
+        height: 900,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false
+        }
     });
-  
-    pythonProcess.stdout.on('data', (data) => {
-      const output = data.toString().trim();
-      if (output === "PEACE_DETECTED") {
-        require('child_process').exec('open -a Spotify');
-      } else if (output === "THUMBSUP_DETECTED") {
-        require('child_process').exec('open -a "System Preferences"');
-      }
-    });
-  
-    pythonProcess.stderr.on('data', (data) => {
-      console.error('Python Error:', data.toString());
-    });
-  });
 
-  mainWindow.loadFile('index.html');
-  mainWindow.webContents.openDevTools();
+    ipcMain.on('process-gestures', (_, data) => {
+        if (pythonProcess) {
+            pythonProcess.kill('SIGTERM');
+        }
+
+        const scriptPath = path.join(__dirname, 'gesture_detector.py');
+        
+        pythonProcess = spawn('python3', [
+            scriptPath,
+            JSON.stringify(data || {hands: []})
+        ], {
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
+
+        pythonProcess.stdout.on('data', (data) => {
+            const output = data.toString().trim();
+            console.log('Python:', output);
+        });
+
+        pythonProcess.stderr.on('data', (data) => {
+            console.error('Python Error:', data.toString());
+        });
+    });
+
+    mainWindow.loadFile('index.html');
+    mainWindow.webContents.openDevTools(); // Keep for debugging
 });
 
 app.on('will-quit', () => {
-  if (pythonProcess) {
-    pythonProcess.kill('SIGTERM');
-  }
+    if (pythonProcess) {
+        pythonProcess.kill('SIGTERM');
+    }
 });
