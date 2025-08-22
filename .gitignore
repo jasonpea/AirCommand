@@ -1,3 +1,7 @@
 __pycache__/
 node_modules/
 __pycache__/
+index.html
+main.js
+renderer.js
+package.json
