@@ -16,18 +16,25 @@ hands.setOptions({
     minTrackingConfidence: 0.5
 });
 
-// Hand connections
+// checking if mediapipe is init properly
+hands.initialize().then(() => {
+  console.log('MediaPipe initialized successfully');
+}).catch(err => {
+  console.error('MediaPipe failed to initialize:', err);
+});
+
+// hand connections
 const HAND_CONNECTIONS = [
     [0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],
     [0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],
     [0,17],[17,18],[18,19],[19,20]
 ];
 
-// Draw landmarks
+// draw landmarks
 function drawLandmarks(landmarks) {
     if (!landmarks) return;
     
-    // Draw connections
+    // draw connections
     ctx.strokeStyle = '#00FF00';
     ctx.lineWidth = 2;
     HAND_CONNECTIONS.forEach(([startIdx, endIdx]) => {
@@ -39,7 +46,7 @@ function drawLandmarks(landmarks) {
         ctx.stroke();
     });
 
-    // Draw points
+    // draw points
     ctx.fillStyle = '#FF0000';
     landmarks.forEach(landmark => {
         ctx.beginPath();
@@ -48,11 +55,11 @@ function drawLandmarks(landmarks) {
     });
 }
 
-// Continuous video rendering
+// video rendering
 function drawVideoFrame() {
     if (!video.srcObject) return;
     
-    // Draw mirrored video
+    // draw mirrored video
     ctx.save();
     ctx.scale(-1, 1);
     ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
@@ -61,7 +68,7 @@ function drawVideoFrame() {
     requestAnimationFrame(drawVideoFrame);
 }
 
-// Process frame with MediaPipe
+// process frame with MediaPipe
 async function processFrame() {
     if (!video.srcObject) return;
     
@@ -73,13 +80,13 @@ async function processFrame() {
     }
 }
 
-// Handle results
+// handle results
 hands.onResults((results) => {
     if (results.multiHandLandmarks) {
-        // Draw landmarks on top of existing video
+        // draw landmarks on top of existing video
         results.multiHandLandmarks.forEach(drawLandmarks);
 
-        // Send to Python
+        // send to Python
         const handsData = results.multiHandLandmarks.map((landmarks, i) => ({
             landmarks: landmarks.map(lm => ({ x: lm.x, y: lm.y, z: lm.z })),
             handedness: results.multiHandedness[i].classification[0].label
@@ -96,7 +103,7 @@ hands.onResults((results) => {
     }
 });
 
-// Initialize camera
+// init camera
 async function initCamera() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -110,7 +117,7 @@ async function initCamera() {
             canvas.height = video.videoHeight;
             feedback.textContent = "Ready - show ✌️ or 👍";
             
-            // Start both loops
+            // start both loops
             drawVideoFrame();  // Continuous video rendering
             processFrame();    // MediaPipe processing
         };
@@ -121,5 +128,5 @@ async function initCamera() {
     }
 }
 
-// Start the app
+// start the app
 initCamera();
